@@ -8,8 +8,9 @@ defmodule Shortcode.Ecto.UUIDTest do
     @primary_key {
       :id,
       EctoTypeShortcodeUUID,
-      prefix: "sch", autogenerate: true
+      prefix: "test", autogenerate: true
     }
+    # This prevents: warning: module attribute @primary_key was set but never used
     embedded_schema do
     end
   end
@@ -59,6 +60,13 @@ defmodule Shortcode.Ecto.UUIDTest do
   end
 
   describe "load/3" do
+    test "with a valid UUIDv7 binary uuid without prefix returns an :ok tuple" do
+      raw_uuid = Uniq.UUID.uuid7(:default)
+      shortcode = Shortcode.to_shortcode!(raw_uuid)
+
+      assert {:ok, ^shortcode} = EctoTypeShortcodeUUID.load(raw_uuid, fn -> :noop end, %{})
+    end
+
     test "with a valid raw binary uuid without prefix returns an :ok tuple" do
       raw_uuid = Ecto.UUID.bingenerate()
       uuid = Ecto.UUID.cast!(raw_uuid)
@@ -83,9 +91,7 @@ defmodule Shortcode.Ecto.UUIDTest do
     test "with an hex-encoded uuid raises an ArgumentError" do
       uuid = Ecto.UUID.generate()
 
-      assert_raise ArgumentError, fn ->
-        EctoTypeShortcodeUUID.load(uuid, fn -> :noop end, %{})
-      end
+      assert {:ok, _} = EctoTypeShortcodeUUID.load(uuid, fn -> :noop end, %{})
     end
 
     test "with an invalid data returns an :error tuple" do
@@ -141,6 +147,23 @@ defmodule Shortcode.Ecto.UUIDTest do
     test "with a wrong prefix, returns an :error tuple" do
       shortcode = Shortcode.to_shortcode!(Ecto.UUID.generate(), "foo")
       assert :error = EctoTypeShortcodeUUID.dump(shortcode, fn -> :noop end, %{prefix: "bar"})
+    end
+  end
+
+  describe "autogenerate" do
+    test "with defaults" do
+      shortcode = EctoTypeShortcodeUUID.autogenerate(%{prefix: "test"})
+      assert String.starts_with?(shortcode, "test_")
+    end
+
+    test "with custom generator" do
+      shortcode =
+        EctoTypeShortcodeUUID.autogenerate(%{
+          prefix: "test",
+          generator: fn -> Uniq.UUID.uuid7() end
+        })
+
+      assert String.starts_with?(shortcode, "test_")
     end
   end
 end

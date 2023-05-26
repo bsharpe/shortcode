@@ -39,10 +39,9 @@ if Code.ensure_loaded?(Ecto.ParameterizedType) do
       {:ok, uuid |> Ecto.UUID.cast!() |> Shortcode.to_shortcode!(prefix)}
     end
 
-    def load(<<_::64, ?-, _::32, ?-, _::32, ?-, _::32, ?-, _::96>> = string, _, _) do
-      raise ArgumentError,
-            "trying to load string UUID as Shortcode.Ecto.UUID: #{inspect(string)}. " <>
-              "Maybe you wanted to declare :uuid as your database field?"
+    def load(<<_::64, ?-, _::32, ?-, _::32, ?-, _::32, ?-, _::96>> = string, _, params) do
+      prefix = Map.get(params, :prefix)
+      {:ok, Shortcode.to_shortcode!(string, prefix)}
     end
 
     def load(nil, _, _), do: {:ok, nil}
@@ -69,9 +68,9 @@ if Code.ensure_loaded?(Ecto.ParameterizedType) do
     @spec autogenerate(map) :: t()
     def autogenerate(params) do
       prefix = Map.get(params, :prefix)
+      generator = Map.get(params, :generator, fn -> Ecto.UUID.generate() end)
 
-      Ecto.UUID.generate()
-      |> Shortcode.to_shortcode!(prefix)
+      Shortcode.to_shortcode!(generator.(), prefix)
     end
   end
 end

@@ -26,6 +26,7 @@ defmodule Shortcode.MixProject do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:uniq, "~> 0.1", only: [:dev, :test]},
       {:ecto, "~> 3.5"},
       {:custom_base, "~> 0.2"}
     ]
